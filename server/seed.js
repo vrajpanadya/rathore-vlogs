@@ -69,63 +69,148 @@
 //   console.error("Seed failed:", err.message);
 //   process.exit(1);
 // });
+// require("dotenv").config();
+
+// const bcrypt = require("bcryptjs");
+// const mysql = require("mysql2/promise");
+
+// async function main() {
+//   const username =
+//     process.env.ADMIN_USERNAME ||
+//     "Rathore vlogs";
+
+//   const password =
+//     process.env.ADMIN_PASSWORD ||
+//     "kirti_rathore0105";
+
+//   const hash = await bcrypt.hash(
+//     password,
+//     12
+//   );
+
+//   const db =
+//     await mysql.createConnection({
+//       host:
+//         process.env.DB_HOST ||
+//         process.env.MYSQLHOST ||
+//         "localhost",
+
+//       port: Number(
+//         process.env.DB_PORT ||
+//         process.env.MYSQLPORT ||
+//         3306
+//       ),
+
+//       user:
+//         process.env.DB_USER ||
+//         process.env.MYSQLUSER ||
+//         "root",
+
+//       password:
+//         process.env.DB_PASSWORD ||
+//         process.env.MYSQLPASSWORD ||
+//         "",
+
+//       database:
+//         process.env.DB_NAME ||
+//         process.env.MYSQLDATABASE ||
+//         "bjp",
+//     });
+
+//   try {
+//     await db.execute(
+//       `INSERT INTO users (
+//         username,
+//         password_hash
+//       )
+//       VALUES (?, ?)
+//       ON DUPLICATE KEY UPDATE
+//       password_hash = VALUES(password_hash)`,
+//       [username, hash]
+//     );
+
+//     console.log(
+//       `✅ Admin user "${username}" ready.`
+//     );
+
+//     console.log(
+//       "✅ Password securely stored as bcrypt hash."
+//     );
+//   } finally {
+//     await db.end();
+//   }
+// }
+
+// main().catch((err) => {
+//   console.error(
+//     "❌ Seed failed:",
+//     err.message
+//   );
+
+//   process.exit(1);
+// });
 require("dotenv").config();
 
 const bcrypt = require("bcryptjs");
 const mysql = require("mysql2/promise");
 
 async function main() {
-  const username =
-    process.env.ADMIN_USERNAME ||
-    "Rathore vlogs";
+  const username = process.env.ADMIN_USERNAME;
+  const password = process.env.ADMIN_PASSWORD;
 
-  const password =
-    process.env.ADMIN_PASSWORD ||
-    "kirti_rathore0105";
+  if (!username) {
+    throw new Error(
+      "ADMIN_USERNAME environment variable is required."
+    );
+  }
 
-  const hash = await bcrypt.hash(
-    password,
-    12
-  );
+  if (!password) {
+    throw new Error(
+      "ADMIN_PASSWORD environment variable is required."
+    );
+  }
 
-  const db =
-    await mysql.createConnection({
-      host:
-        process.env.DB_HOST ||
-        process.env.MYSQLHOST ||
-        "localhost",
+  const hash = await bcrypt.hash(password, 12);
 
-      port: Number(
-        process.env.DB_PORT ||
-        process.env.MYSQLPORT ||
-        3306
-      ),
+  const db = await mysql.createConnection({
+    host:
+      process.env.MYSQLHOST ||
+      process.env.DB_HOST ||
+      "localhost",
 
-      user:
-        process.env.DB_USER ||
-        process.env.MYSQLUSER ||
-        "root",
+    port: Number(
+      process.env.MYSQLPORT ||
+      process.env.DB_PORT ||
+      3306
+    ),
 
-      password:
-        process.env.DB_PASSWORD ||
-        process.env.MYSQLPASSWORD ||
-        "",
+    user:
+      process.env.MYSQLUSER ||
+      process.env.DB_USER ||
+      "root",
 
-      database:
-        process.env.DB_NAME ||
-        process.env.MYSQLDATABASE ||
-        "bjp",
-    });
+    password:
+      process.env.MYSQLPASSWORD ||
+      process.env.DB_PASSWORD ||
+      "",
+
+    database:
+      process.env.MYSQLDATABASE ||
+      process.env.DB_NAME ||
+      "bjp",
+  });
 
   try {
     await db.execute(
-      `INSERT INTO users (
+      `
+      INSERT INTO users (
         username,
         password_hash
       )
       VALUES (?, ?)
       ON DUPLICATE KEY UPDATE
-      password_hash = VALUES(password_hash)`,
+        password_hash = VALUES(password_hash)
+      `,
       [username, hash]
     );
 
