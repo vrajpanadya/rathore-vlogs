@@ -5273,7 +5273,7 @@ export function HeroEditor({ data, onCommit, onToast }: EditorProps) {
                       </p>
                     </div>
 
-                    <Field label="Image URL">
+                    {/* <Field label="Image URL">
                       <TextInput
                         value={imageUrl}
                         onChange={(e) =>
@@ -5287,12 +5287,16 @@ export function HeroEditor({ data, onCommit, onToast }: EditorProps) {
                         }
                         placeholder="/images/photo.jpeg or https://..."
                       />
-                    </Field>
+                    </Field> */}
 
                     <label className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/10">
                       <Upload className="h-4 w-4" />
 
-                      {uploading ? "Uploading..." : "Upload Photo"}
+                      {uploading
+  ? "Uploading..."
+  : imageUrl
+    ? "Change Photo"
+    : "Upload Photo"}
 
                       <input
                         type="file"
@@ -5540,7 +5544,7 @@ export function AboutEditor({ data, onCommit, onToast }: EditorProps) {
               return (
                 <div
                   key={item.key}
-                  className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]"
+                  className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-lg shadow-black/20 transition-all duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-xl hover:shadow-brand/10"
                 >
                   <div className="aspect-[4/5] overflow-hidden bg-ink/60">
                     {imageUrl ? (
@@ -5610,7 +5614,7 @@ export function AboutEditor({ data, onCommit, onToast }: EditorProps) {
           </div>
 
           <p className="mt-4 text-xs text-white/40">
-            JPG, PNG, WEBP or GIF · Maximum 10 MB per image
+            Upload JPG, PNG, WEBP or GIF images up to 10 MB.
           </p>
         </Card>
       </div>
