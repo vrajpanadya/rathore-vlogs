@@ -10961,18 +10961,17 @@ function SettingsTab({
             variant="danger"
             onClick={
               async () => {
-                if (
-                  confirm(
-                    "Reset ALL content to the defaults? This cannot be undone."
-                  )
-                ) {
-                  const result =
-                    await resetAll();
+               const confirmation = window.prompt(
+  'This will permanently reset all website content. Type "RESET" to continue.'
+);
 
-                  toast(
-                    result.message
-                  );
-                }
+if (confirmation === "RESET") {
+  const result = await resetAll();
+
+  toast(result.message);
+} else if (confirmation !== null) {
+  toast('Reset cancelled — please type "RESET" exactly.');
+}
               }
             }
           >
@@ -10999,44 +10998,32 @@ function Overview({
     session,
   } = useSite();
 
-  const counts = [
-    {
-      label:
-        "Videos",
-      value:
-        data.videos
-          .length,
-      tab:
-        "videos" as Tab,
-    },
-    {
-      label:
-        "Gallery posts",
-      value:
-        data.gallery
-          .length,
-      tab:
-        "gallery" as Tab,
-    },
-    {
-      label:
-        "Pillars",
-      value:
-        data.pillars
-          .length,
-      tab:
-        "pillars" as Tab,
-    },
-    {
-      label:
-        "Marquee items",
-      value:
-        data.marquee
-          .length,
-      tab:
-        "marquee" as Tab,
-    },
-  ];
+const counts = [
+  {
+    label: "Videos",
+    value: data.videos.length,
+    tab: "videos" as Tab,
+    icon: <YoutubeIcon className="h-5 w-5" />,
+  },
+  {
+    label: "Gallery posts",
+    value: data.gallery.length,
+    tab: "gallery" as Tab,
+    icon: <Image className="h-5 w-5" />,
+  },
+  {
+    label: "Pillars",
+    value: data.pillars.length,
+    tab: "pillars" as Tab,
+    icon: <Palmtree className="h-5 w-5" />,
+  },
+  {
+    label: "Marquee items",
+    value: data.marquee.length,
+    tab: "marquee" as Tab,
+    icon: <Type className="h-5 w-5" />,
+  },
+];
 
   return (
     <>
@@ -11169,7 +11156,7 @@ function Overview({
           </span>
         </h2>
 
-        <p
+        {/* <p
           className="mt-2 max-w-xl text-sm text-white/60"
           style={{
             animation:
@@ -11185,7 +11172,16 @@ function Overview({
           from their
           dedicated MySQL
           tables.
-        </p>
+        </p> */}
+        <p
+  className="mt-2 max-w-xl text-sm text-white/60"
+  style={{
+    animation:
+      "overviewTextFade 2.4s ease-in-out 2",
+  }}
+>
+  Manage your website content and see updates live instantly.
+</p>
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -11202,13 +11198,23 @@ function Overview({
                   c.tab
                 )
               }
-              className="rounded-2xl border border-white/10 bg-white/5 p-5 text-left transition-all hover:border-brand/40 hover:bg-white/10"
+              className="rounded-2xl border border-white/10 bg-white/5 p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-brand/40 hover:bg-white/10 hover:shadow-xl hover:shadow-brand/10"
             >
-              <p className="font-display text-3xl font-semibold text-white">
-                {
-                  c.value
-                }
-              </p>
+             <div className="flex items-start justify-between gap-3">
+  <div>
+    <p className="font-display text-3xl font-semibold text-white">
+      {c.value}
+    </p>
+
+    <p className="mt-1 text-xs font-medium text-white/50">
+      {c.label}
+    </p>
+  </div>
+
+  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10 text-brand-2">
+    {c.icon}
+  </span>
+</div>
 
               <p className="mt-1 text-xs font-medium text-white/50">
                 {
@@ -11468,23 +11474,36 @@ export default function AdminApp() {
                 </span>
               </p>
 
-              <p className="text-[10px] uppercase tracking-wider text-white/40">
-                {status === "live"
-                  ? "● MySQL connected"
-                  : "● server offline"}
-              </p>
+             <p
+  className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+    status === "live"
+      ? "bg-emerald-500/10 text-emerald-400"
+      : "bg-red-500/10 text-red-400"
+  }`}
+>
+  <span
+    className={`h-1.5 w-1.5 rounded-full ${
+      status === "live"
+        ? "bg-emerald-400"
+        : "bg-red-400"
+    }`}
+  />
+
+  {status === "live"
+    ? "System online"
+    : "System offline"}
+</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <a
-              href="#home"
-              className="hidden items-center gap-1.5 rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white/70 transition-all hover:text-white sm:inline-flex"
-            >
-              <Mail className="h-3.5 w-3.5" />
-              View site
-            </a>
-
+           <a
+  href="#home"
+  className="hidden items-center gap-1.5 rounded-full border border-brand/40 bg-brand/10 px-4 py-2 text-xs font-semibold text-brand-2 transition-all hover:bg-brand/20 hover:text-white sm:inline-flex"
+>
+  <ExternalLink className="h-3.5 w-3.5" />
+View site
+</a>
             <button
               onClick={logout}
               className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white/70 transition-all hover:border-red-500/50 hover:text-red-400"
@@ -11517,7 +11536,7 @@ export default function AdminApp() {
                   className={`flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all ${
                     tab ===
                     t.id
-                      ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-lg shadow-brand/25"
+                     ? "border-l-2 border-gold bg-gradient-to-r from-brand to-brand-2 text-white shadow-lg shadow-brand/30"
                       : "text-white/60 hover:bg-white/5 hover:text-white"
                   }`}
                 >
@@ -11555,7 +11574,7 @@ export default function AdminApp() {
                   className={`flex flex-none items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-all ${
                     tab ===
                     t.id
-                      ? "bg-brand text-white"
+                      ? "bg-gradient-to-r from-brand to-brand-2 text-white shadow-lg shadow-brand/25"
                       : "border border-white/15 text-white/60"
                   }`}
                 >
