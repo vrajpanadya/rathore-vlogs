@@ -6236,6 +6236,15 @@ const ICON_OPTIONS = [
 
 export function PillarsEditor({ data, onCommit, onToast }: EditorProps) {
   const [pillars, setPillars] = useState(data.pillars);
+  const movePillar = (i: number, dir: -1 | 1) => {
+  const next = [...pillars];
+  const j = i + dir;
+
+  if (j < 0 || j >= next.length) return;
+
+  [next[i], next[j]] = [next[j], next[i]];
+  setPillars(next);
+};
 
   return (
     <>
@@ -6243,12 +6252,44 @@ export function PillarsEditor({ data, onCommit, onToast }: EditorProps) {
         {pillars.map((pillar, i) => (
           <Card
             key={i}
-            title={`Pillar ${i + 1}`}
-            actions={
-              <IconBtn danger title="Delete" onClick={() => setPillars(pillars.filter((_, j) => j !== i))}>
-                <Trash2 className="h-3.5 w-3.5" />
-              </IconBtn>
-            }
+            title={pillar.title?.trim() || `Pillar ${i + 1}`}
+           actions={
+  <div className="flex gap-1.5">
+    <IconBtn
+      title="Move up"
+      disabled={i === 0}
+      onClick={() => movePillar(i, -1)}
+    >
+      <ArrowUp className="h-3.5 w-3.5" />
+    </IconBtn>
+
+    <IconBtn
+      title="Move down"
+      disabled={i === pillars.length - 1}
+      onClick={() => movePillar(i, 1)}
+    >
+      <ArrowDown className="h-3.5 w-3.5" />
+    </IconBtn>
+
+    <IconBtn
+      danger
+      title="Delete"
+      onClick={() => {
+        const confirmed = window.confirm(
+          "Are you sure you want to delete this pillar?"
+        );
+
+        if (confirmed) {
+          setPillars(
+            pillars.filter((_, j) => j !== i)
+          );
+        }
+      }}
+    >
+      <Trash2 className="h-3.5 w-3.5" />
+    </IconBtn>
+  </div>
+}
           >
             <div className="grid gap-3 sm:grid-cols-[auto_1fr]">
               <Field label="Icon">
