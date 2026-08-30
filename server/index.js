@@ -4011,7 +4011,150 @@ async function replaceGallery(
     );
   }
 }
+/* =========================================================
+   FORGOT USERNAME / PASSWORD
+========================================================= */
 
+app.post(
+  "/api/admin/recover",
+  async (req, res) => {
+    const {
+      recoveryKey,
+      newPassword,
+    } = req.body || {};
+
+    const savedRecoveryKey =
+      process.env.ADMIN_RECOVERY_KEY || "";
+
+    /* =========================
+       CHECK RECOVERY SETUP
+    ========================= */
+
+    if (!savedRecoveryKey) {
+      return res.status(503).json({
+        error:
+          "Account recovery is not configured",
+      });
+    }
+
+    /* =========================
+       CHECK REQUIRED FIELDS
+    ========================= */
+
+    if (!recoveryKey || !newPassword) {
+      return res.status(400).json({
+        error:
+          "Recovery key and new password are required",
+      });
+    }
+
+    /* =========================
+       PASSWORD VALIDATION
+    ========================= */
+
+    if (String(newPassword).length < 6) {
+      return res.status(400).json({
+        error:
+          "New password must be at least 6 characters",
+      });
+    }
+
+    /* =========================
+       VERIFY RECOVERY KEY
+    ========================= */
+
+    const enteredKey = Buffer.from(
+      String(recoveryKey)
+    );
+
+    const correctKey = Buffer.from(
+      String(savedRecoveryKey)
+    );
+
+    const validRecoveryKey =
+      enteredKey.length === correctKey.length &&
+      crypto.timingSafeEqual(
+        enteredKey,
+        correctKey
+      );
+
+    if (!validRecoveryKey) {
+      return res.status(401).json({
+        error:
+          "Invalid recovery key",
+      });
+    }
+
+    try {
+      /* =========================
+         GET ADMIN USERNAME
+      ========================= */
+
+      const [rows] = await pool.query(`
+        SELECT username
+        FROM users
+        LIMIT 1
+      `);
+
+      if (!rows.length) {
+        return res.status(404).json({
+          error:
+            "Admin account not found",
+        });
+      }
+
+      const username =
+        rows[0].username;
+
+      /* =========================
+         CREATE NEW PASSWORD HASH
+      ========================= */
+
+      const passwordHash =
+        await bcrypt.hash(
+          String(newPassword),
+          12
+        );
+
+      /* =========================
+         UPDATE PASSWORD
+      ========================= */
+
+      await pool.execute(
+        `
+        UPDATE users
+        SET password_hash = ?
+        WHERE username = ?
+        `,
+        [
+          passwordHash,
+          username,
+        ]
+      );
+
+      /* =========================
+         SUCCESS
+      ========================= */
+
+      return res.json({
+        ok: true,
+        username,
+        message:
+          "Account recovered successfully",
+      });
+    } catch (error) {
+      console.error(
+        "Admin recovery error:",
+        error.message
+      );
+
+      return res.status(500).json({
+        error:
+          "Could not recover admin account",
+      });
+    }
+  }
+);
 /* =========================================================
    SAVE SITE
 ========================================================= */
