@@ -3481,11 +3481,75 @@ const INSTAGRAM_PROFILE_CACHE_MS =
    MIDDLEWARE
 ========================================================= */
 
+// app.use(
+//   cors({
+//     origin:
+//       process.env.CORS_ORIGIN ||
+//       true,
+//   })
+// );
+const allowedOrigins = new Set([
+  "http://localhost:5173",
+  "https://rathore-vlogs.vercel.app",
+
+  ...String(
+    process.env.CORS_ORIGIN || ""
+  )
+    .split(",")
+    .map((origin) =>
+      origin.trim()
+    )
+    .filter(Boolean),
+]);
+
+function isAllowedOrigin(origin) {
+  // Direct browser / Postman / server requests
+  if (!origin) {
+    return true;
+  }
+
+  // Main website + localhost
+  if (
+    allowedOrigins.has(origin)
+  ) {
+    return true;
+  }
+
+  // Allow all Rathore Vlogs Vercel
+  // preview/deployment domains
+  const isVercelDomain =
+    /^https:\/\/rathore-vlogs(?:-[a-z0-9-]+)?\.vercel\.app$/i.test(
+      origin
+    );
+
+  if (isVercelDomain) {
+    return true;
+  }
+
+  return false;
+}
+
 app.use(
   cors({
-    origin:
-      process.env.CORS_ORIGIN ||
-      true,
+    origin: (
+      origin,
+      callback
+    ) => {
+      if (
+        isAllowedOrigin(origin)
+      ) {
+        return callback(
+          null,
+          true
+        );
+      }
+
+      return callback(
+        new Error(
+          "Not allowed by CORS"
+        )
+      );
+    },
   })
 );
 
