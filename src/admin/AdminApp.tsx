@@ -1938,30 +1938,46 @@ export default function AdminApp() {
 
         <div className="absolute -right-32 bottom-0 h-96 w-96 rounded-full bg-plum-2/50 blur-[130px]" />
       </div>
+{/* Top Bar */}
 
-      {/* Top Bar */}
+<header className="sticky top-0 z-40 border-b border-white/10 bg-ink/85 backdrop-blur-xl">
+  <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5">
 
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-ink/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5">
-          <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-2 text-white">
-              <ShieldCheck className="h-5 w-5" />
-            </span>
+    <div className="flex items-center gap-3">
 
-            <div className="leading-tight">
-              <p className="font-display text-base font-semibold text-white">
-                Admin Panel
-              </p>
+      {/* Rathore Vlogs Logo */}
+      <a
+        href="https://www.youtube.com/@Rathorevlogs_0148"
+        target="_blank"
+        rel="noreferrer"
+        className="flex h-11 w-14 items-center justify-center overflow-hidden rounded-xl bg-white"
+      >
+        <img
+          src="/rathore-vlogs-logo.jpg"
+          alt="Rathore Vlogs"
+          className="h-full w-full object-contain"
+        />
+      </a>
 
-              <p className="text-[10px] uppercase tracking-wider text-white/40">
-                {status ===
-                "live"
-                  ? "● MySQL connected"
-                  : "● server offline"}
-              </p>
-            </div>
-          </div>
+      <div className="leading-tight">
 
+        <a
+          href="https://www.youtube.com/@Rathorevlogs_0148"
+          target="_blank"
+          rel="noreferrer"
+          className="font-display text-base font-semibold text-white transition hover:text-brand"
+        >
+          Rathore vlogs
+        </a>
+
+        <p className="text-[10px] uppercase tracking-wider text-white/40">
+          {status === "live"
+            ? "● MySQL connected"
+            : "● server offline"}
+        </p>
+
+      </div>
+    </div>
           <div className="flex items-center gap-3">
             <a
               href="#home"
