@@ -3681,8 +3681,8 @@ export function getApiBase() {
   const envApi = DEFAULT_API.replace(/\/+$/, "");
 
   if (import.meta.env.PROD) {
-    return envApi;
-  }
+  return window.location.origin.replace(/\/+$/, "");
+}
 
   return (
     localStorage.getItem(API_KEY) ||
