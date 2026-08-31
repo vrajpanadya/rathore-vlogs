@@ -3468,6 +3468,8 @@ const SECRET =
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 /* =========================================================
    INSTAGRAM PROFILE CACHE
 ========================================================= */
@@ -3866,6 +3868,38 @@ function parseJson(
     : value;
 }
 
+function forceHttps(value) {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  return value.replace(
+    /^http:\/\/rathore-vlogs-production\.up\.railway\.app/i,
+    "https://rathore-vlogs-production.up.railway.app"
+  );
+}
+
+function normalizeHttps(value) {
+  if (Array.isArray(value)) {
+    return value.map(normalizeHttps);
+  }
+
+  if (
+    value &&
+    typeof value === "object"
+  ) {
+    return Object.fromEntries(
+      Object.entries(value).map(
+        ([key, item]) => [
+          key,
+          normalizeHttps(item),
+        ]
+      )
+    );
+  }
+
+  return forceHttps(value);
+}
 /* =========================================================
    READ SITE
 ========================================================= */
@@ -5216,12 +5250,17 @@ app.post(
             });
         }
 
-        const uploadedUrl =
-          `${req.protocol}://` +
-          `${req.get(
-            "host"
-          )}/uploads/` +
-          `${req.file.filename}`;
+       const protocol =
+  process.env.NODE_ENV === "production"
+    ? "https"
+    : req.protocol;
+
+const uploadedUrl =
+  `${protocol}://` +
+  `${req.get(
+    "host"
+  )}/uploads/` +
+  `${req.file.filename}`;
 
         return res.json({
           ok: true,
