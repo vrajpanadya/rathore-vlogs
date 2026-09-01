@@ -3742,7 +3742,7 @@ function persistSession(
 
 async function fetchWithTimeout(
   url: string,
-  timeout = 20000
+  timeout = 8000
 ) {
   const controller = new AbortController();
 
@@ -3801,22 +3801,13 @@ export function SiteProvider({
 
       let lastError = "";
 
+      // Load the site directly. The old /api/health request added
+      // another network round-trip before any CMS data could load.
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
-          const health = await fetchWithTimeout(
-            `${api}/api/health`,
-            15000
-          );
-
-          if (!health.ok) {
-            throw new Error(
-              `API health check failed (${health.status})`
-            );
-          }
-
           const response = await fetchWithTimeout(
             `${api}/api/site`,
-            20000
+            8000
           );
 
           if (!response.ok) {
@@ -3845,9 +3836,11 @@ export function SiteProvider({
               ? err.message
               : "The database API is unavailable";
 
+          // One quick retry helps with a Railway cold start without
+          // making iPhone / WhatsApp users wait several extra seconds.
           if (attempt < 2) {
             await new Promise((resolve) =>
-              window.setTimeout(resolve, 2000)
+              window.setTimeout(resolve, 400)
             );
           }
         }
