@@ -3596,9 +3596,8 @@ app.use(
     }
   )
 );
-
 /* =========================================================
-   IMAGE UPLOAD CONFIG
+   IMAGE + VIDEO UPLOAD CONFIG
 ========================================================= */
 
 const upload = multer({
@@ -3633,9 +3632,13 @@ const upload = multer({
           ".png",
           ".webp",
           ".gif",
+          ".mp4",
+          ".webm",
+          ".mov",
+          ".m4v",
         ].includes(ext)
           ? ext
-          : ".jpg";
+          : ".bin";
 
       cb(
         null,
@@ -3648,7 +3651,7 @@ const upload = multer({
 
   limits: {
     fileSize:
-      10 *
+      1024 *
       1024 *
       1024,
   },
@@ -3658,10 +3661,19 @@ const upload = multer({
     file,
     cb
   ) => {
-    if (
+    const isImage =
       /^image\/(jpeg|png|webp|gif)$/.test(
         file.mimetype
-      )
+      );
+
+    const isVideo =
+      /^video\/(mp4|webm|quicktime|x-m4v)$/.test(
+        file.mimetype
+      );
+
+    if (
+      isImage ||
+      isVideo
     ) {
       cb(
         null,
@@ -3670,7 +3682,7 @@ const upload = multer({
     } else {
       cb(
         new Error(
-          "Only JPG, PNG, WEBP and GIF images are allowed"
+          "Only JPG, PNG, WEBP, GIF, MP4, WEBM, MOV and M4V files are allowed"
         )
       );
     }
@@ -5210,7 +5222,7 @@ app.get(
 );
 
 /* =========================================================
-   IMAGE UPLOAD
+   IMAGE + VIDEO UPLOAD
 ========================================================= */
 
 app.post(
@@ -5220,9 +5232,16 @@ app.post(
     req,
     res
   ) => {
-    upload.single(
-      "image"
-    )(
+    upload.fields([
+      {
+        name: "image",
+        maxCount: 1,
+      },
+      {
+        name: "video",
+        maxCount: 1,
+      },
+    ])(
       req,
       res,
       (
@@ -5239,28 +5258,33 @@ app.post(
             });
         }
 
+        const uploadedFile =
+          req.files?.image?.[0] ||
+          req.files?.video?.[0];
+
         if (
-          !req.file
+          !uploadedFile
         ) {
           return res
             .status(400)
             .json({
               error:
-                "No image selected",
+                "No image or video selected",
             });
         }
 
-       const protocol =
-  process.env.NODE_ENV === "production"
-    ? "https"
-    : req.protocol;
+        const protocol =
+          process.env.NODE_ENV ===
+          "production"
+            ? "https"
+            : req.protocol;
 
-const uploadedUrl =
-  `${protocol}://` +
-  `${req.get(
-    "host"
-  )}/uploads/` +
-  `${req.file.filename}`;
+        const uploadedUrl =
+          `${protocol}://` +
+          `${req.get(
+            "host"
+          )}/uploads/` +
+          `${uploadedFile.filename}`;
 
         return res.json({
           ok: true,
