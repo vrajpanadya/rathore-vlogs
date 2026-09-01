@@ -4732,10 +4732,93 @@ app.get(
    NO API KEY
 ========================================================= */
 
+function runYouTubeYtDlp(
+  ytdlpPath,
+  url,
+  extraArgs = []
+) {
+  return new Promise(
+    (resolve, reject) => {
+      execFile(
+        ytdlpPath,
+
+        [
+          "--js-runtimes",
+          "node",
+
+          "--remote-components",
+          "ejs:github",
+
+          "--dump-single-json",
+
+          "--skip-download",
+
+          "--ignore-no-formats-error",
+
+          "--no-check-formats",
+
+          "--no-playlist",
+
+          "--no-warnings",
+
+          ...extraArgs,
+
+          url,
+        ],
+
+        {
+          windowsHide: true,
+
+          maxBuffer:
+            20 *
+            1024 *
+            1024,
+        },
+
+        (
+          error,
+          stdout,
+          stderr
+        ) => {
+          if (stdout) {
+            try {
+              const info =
+                JSON.parse(
+                  stdout
+                );
+
+              return resolve(
+                info
+              );
+            } catch {
+              // continue below
+            }
+          }
+
+          if (error) {
+            return reject(
+              new Error(
+                stderr ||
+                error.message
+              )
+            );
+          }
+
+          reject(
+            new Error(
+              "No YouTube information returned"
+            )
+          );
+        }
+      );
+    }
+  );
+}
+
 app.get(
   "/api/youtube-info",
   requireAuth,
-  (
+  async (
     req,
     res
   ) => {
@@ -4745,13 +4828,7 @@ app.get(
         ""
       ).trim();
 
-    /* =========================
-       VALIDATE URL
-    ========================= */
-
-    if (
-      !url
-    ) {
+    if (!url) {
       return res
         .status(400)
         .json({
@@ -4798,17 +4875,6 @@ app.get(
         });
     }
 
-    /* =========================
-       YT-DLP LOCATION
-
-       WINDOWS:
-       C:\avc\tools\yt-dlp.exe
-
-       DEPLOY / LINUX:
-       /usr/local/bin/yt-dlp
-       or system yt-dlp
-    ========================= */
-
     const ytdlpPath =
       process.env.YTDLP_PATH ||
       (
@@ -4822,10 +4888,6 @@ app.get(
             )
           : "yt-dlp"
       );
-
-    /* =========================
-       WINDOWS FILE CHECK
-    ========================= */
 
     if (
       process.platform ===
@@ -4842,286 +4904,281 @@ app.get(
         });
     }
 
-    /* =========================
-       RUN YT-DLP
-    ========================= */
-
-    execFile(
-      ytdlpPath,
-
-      [
-        "--js-runtimes",
-        "node",
-
-        "--remote-components",
-        "ejs:github",
-
-        "--dump-single-json",
-
-        "--skip-download",
-
-        "--no-playlist",
-
-        "--no-warnings",
-
-        url,
-      ],
-
+    const attempts = [
       {
-        windowsHide:
-          true,
-
-        maxBuffer:
-          20 *
-          1024 *
-          1024,
+        name: "default",
+        args: [],
       },
 
-      (
-        error,
-        stdout,
-        stderr
-      ) => {
+      {
+        name: "web_embedded",
+        args: [
+          "--extractor-args",
+          "youtube:player_client=web_embedded",
+        ],
+      },
+
+      {
+        name: "tv",
+        args: [
+          "--extractor-args",
+          "youtube:player_client=tv",
+        ],
+      },
+
+      {
+        name: "android_vr",
+        args: [
+          "--extractor-args",
+          "youtube:player_client=android_vr",
+        ],
+      },
+    ];
+
+    let info = null;
+    let lastError = "";
+
+    for (
+      const attempt of
+      attempts
+    ) {
+      try {
+        console.log(
+          `YouTube yt-dlp attempt: ${attempt.name}`
+        );
+
+        info =
+          await runYouTubeYtDlp(
+            ytdlpPath,
+            url,
+            attempt.args
+          );
+
         if (
-          error
+          info &&
+          (
+            info.title ||
+            info.id
+          )
         ) {
-          console.error(
-            "YT-DLP ERROR:"
+          console.log(
+            `YouTube yt-dlp success: ${attempt.name}`
           );
 
-          console.error(
-            stderr ||
-            error.message
-          );
-
-          return res
-            .status(500)
-            .json({
-              error:
-                "Could not fetch YouTube video information",
-            });
+          break;
         }
+      } catch (error) {
+        lastError =
+          error instanceof Error
+            ? error.message
+            : String(error);
 
-        try {
-          const info =
-            JSON.parse(
-              stdout
-            );
+        console.error(
+          `YouTube yt-dlp ${attempt.name} failed:`,
+          lastError
+        );
 
-          /* =========================
-             DURATION
-          ========================= */
-
-          const durationSeconds =
-            Number(
-              info.duration ||
-              0
-            );
-
-          const hours =
-            Math.floor(
-              durationSeconds /
-              3600
-            );
-
-          const minutes =
-            Math.floor(
-              (
-                durationSeconds %
-                3600
-              ) /
-              60
-            );
-
-          const seconds =
-            Math.floor(
-              durationSeconds %
-              60
-            );
-
-          let duration =
-            "";
-
-          if (
-            durationSeconds >
-            0
-          ) {
-            if (
-              hours >
-              0
-            ) {
-              duration =
-                `${hours}:` +
-                `${String(
-                  minutes
-                ).padStart(
-                  2,
-                  "0"
-                )}:` +
-                `${String(
-                  seconds
-                ).padStart(
-                  2,
-                  "0"
-                )}`;
-            } else {
-              duration =
-                `${minutes}:` +
-                `${String(
-                  seconds
-                ).padStart(
-                  2,
-                  "0"
-                )}`;
-            }
-          }
-
-          /* =========================
-             VIEW COUNT
-          ========================= */
-
-          const viewsNumber =
-            Number(
-              info.view_count ||
-              0
-            );
-
-          let views =
-            "";
-
-          if (
-            viewsNumber >=
-            1000000000
-          ) {
-            views =
-              `${(
-                viewsNumber /
-                1000000000
-              )
-                .toFixed(1)
-                .replace(
-                  ".0",
-                  ""
-                )}B views`;
-          } else if (
-            viewsNumber >=
-            1000000
-          ) {
-            views =
-              `${(
-                viewsNumber /
-                1000000
-              )
-                .toFixed(1)
-                .replace(
-                  ".0",
-                  ""
-                )}M views`;
-          } else if (
-            viewsNumber >=
-            1000
-          ) {
-            views =
-              `${(
-                viewsNumber /
-                1000
-              )
-                .toFixed(1)
-                .replace(
-                  ".0",
-                  ""
-                )}K views`;
-          } else if (
-            viewsNumber >
-            0
-          ) {
-            views =
-              `${viewsNumber} views`;
-          }
-
-          /* =========================
-             THUMBNAIL
-          ========================= */
-
-          let thumbnail =
-            info.thumbnail ||
-            "";
-
-          if (
-            Array.isArray(
-              info.thumbnails
-            ) &&
-            info.thumbnails
-              .length
-          ) {
-            const best =
-              info.thumbnails[
-                info.thumbnails.length -
-                1
-              ];
-
-            if (
-              best?.url
-            ) {
-              thumbnail =
-                best.url;
-            }
-          }
-
-          /* =========================
-             RESPONSE
-          ========================= */
-
-          return res.json({
-            ok: true,
-
-            title:
-              info.title ||
-              "",
-
-            duration,
-
-            views,
-
-            viewCount:
-              viewsNumber,
-
-            thumb:
-              thumbnail,
-
-            youtubeUrl:
-              info.webpage_url ||
-              url,
-
-            channel:
-              info.channel ||
-              info.uploader ||
-              "",
-
-            videoId:
-              info.id ||
-              "",
-          });
-        } catch (
-          parseError
-        ) {
-          console.error(
-            "YouTube JSON parse error:",
-            parseError
-          );
-
-          return res
-            .status(500)
-            .json({
-              error:
-                "Invalid YouTube response",
-            });
-        }
+        info = null;
       }
-    );
+    }
+
+    if (!info) {
+      return res
+        .status(502)
+        .json({
+          error:
+            /sign in to confirm|not a bot|cookies/i.test(
+              lastError
+            )
+              ? "YouTube blocked this server request"
+              : "Could not fetch YouTube video information",
+        });
+    }
+
+    const durationSeconds =
+      Number(
+        info.duration ||
+        0
+      );
+
+    const hours =
+      Math.floor(
+        durationSeconds /
+        3600
+      );
+
+    const minutes =
+      Math.floor(
+        (
+          durationSeconds %
+          3600
+        ) /
+        60
+      );
+
+    const seconds =
+      Math.floor(
+        durationSeconds %
+        60
+      );
+
+    let duration = "";
+
+    if (
+      durationSeconds >
+      0
+    ) {
+      if (
+        hours >
+        0
+      ) {
+        duration =
+          `${hours}:` +
+          `${String(
+            minutes
+          ).padStart(
+            2,
+            "0"
+          )}:` +
+          `${String(
+            seconds
+          ).padStart(
+            2,
+            "0"
+          )}`;
+      } else {
+        duration =
+          `${minutes}:` +
+          `${String(
+            seconds
+          ).padStart(
+            2,
+            "0"
+          )}`;
+      }
+    }
+
+    const viewsNumber =
+      Number(
+        info.view_count ||
+        0
+      );
+
+    let views = "";
+
+    if (
+      viewsNumber >=
+      1000000000
+    ) {
+      views =
+        `${(
+          viewsNumber /
+          1000000000
+        )
+          .toFixed(1)
+          .replace(
+            ".0",
+            ""
+          )}B views`;
+    } else if (
+      viewsNumber >=
+      1000000
+    ) {
+      views =
+        `${(
+          viewsNumber /
+          1000000
+        )
+          .toFixed(1)
+          .replace(
+            ".0",
+            ""
+          )}M views`;
+    } else if (
+      viewsNumber >=
+      1000
+    ) {
+      views =
+        `${(
+          viewsNumber /
+          1000
+        )
+          .toFixed(1)
+          .replace(
+            ".0",
+            ""
+          )}K views`;
+    } else if (
+      viewsNumber >
+      0
+    ) {
+      views =
+        `${viewsNumber} views`;
+    }
+
+    let thumbnail =
+      info.thumbnail ||
+      "";
+
+    if (
+      Array.isArray(
+        info.thumbnails
+      ) &&
+      info.thumbnails.length
+    ) {
+      const validThumbs =
+        info.thumbnails.filter(
+          item =>
+            item &&
+            item.url
+        );
+
+      if (
+        validThumbs.length
+      ) {
+        const best =
+          validThumbs[
+            validThumbs.length -
+            1
+          ];
+
+        thumbnail =
+          best.url;
+      }
+    }
+
+    return res.json({
+      ok: true,
+
+      title:
+        info.title ||
+        "",
+
+      duration,
+
+      views,
+
+      viewCount:
+        viewsNumber,
+
+      thumb:
+        thumbnail,
+
+      youtubeUrl:
+        info.webpage_url ||
+        url,
+
+      channel:
+        info.channel ||
+        info.uploader ||
+        "",
+
+      videoId:
+        info.id ||
+        "",
+    });
   }
 );
-
 /* =========================================================
    PUBLIC VIDEOS
 ========================================================= */
