@@ -1497,7 +1497,7 @@ function ApplicationRouter({
   const [
     showIntro,
     setShowIntro,
-  ] = useState(true);
+  ] = useState(false);
 
   useEffect(() => {
     const timer =
