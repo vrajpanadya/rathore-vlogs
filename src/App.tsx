@@ -1519,9 +1519,8 @@ function ApplicationRouter({
   ======================================================= */
 
   if (
-    showIntro ||
-    status === "connecting"
-  ) {
+  showIntro
+) {
     return (
       <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-ink px-5 text-white">
 
@@ -1548,27 +1547,6 @@ function ApplicationRouter({
               100% {
                 opacity: 1;
                 transform: scale(1);
-              }
-            }
-
-              to {
-                transform: rotate(360deg);
-              }
-            }
-
-              to {
-                transform: rotate(0deg);
-              }
-            }
-
-              50% {
-                transform: scale(1.2);
-                opacity: 1;
-                box-shadow:
-                  0 0 18px
-                  rgba(255, 70, 140, 0.9),
-                  0 0 40px
-                  rgba(255, 70, 140, 0.45);
               }
             }
 
