@@ -3580,20 +3580,27 @@ function normalizeHttps<T>(value: T): T {
     ) as T;
   }
 
-  if (
-    value &&
-    typeof value === "object"
-  ) {
-    return Object.fromEntries(
-      Object.entries(
-        value as Record<string, unknown>
-      ).map(([key, item]) => [
-        key,
-        normalizeHttps(item),
-      ])
-    ) as T;
-  }
+ if (
+  value &&
+  typeof value === "object"
+) {
+  const source =
+    value as Record<string, unknown>;
 
+  const result:
+    Record<string, unknown> = {};
+
+  Object.keys(source).forEach(
+    (key) => {
+      result[key] =
+        normalizeHttps(
+          source[key]
+        );
+    }
+  );
+
+  return result as T;
+}
   return value;
 }
 
